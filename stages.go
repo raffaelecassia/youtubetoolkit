@@ -146,12 +146,10 @@ func playlistItem2record(input <-chan *bigg.PlaylistItem) <-chan []string {
 	go func() {
 		for i := range input {
 			output <- []string{
-				// i.Id, // plylist item id
 				i.Snippet.ResourceId.VideoId,
-				// i.Snippet.Title,
-				fmt.Sprintf("[%s] %s", i.Snippet.VideoOwnerChannelTitle, i.Snippet.Title),
-				// i.Snippet.VideoOwnerChannelId,
-				// i.Snippet.VideoOwnerChannelTitle,
+				i.Snippet.Title,
+				i.Snippet.VideoOwnerChannelId,
+				i.Snippet.VideoOwnerChannelTitle,
 			}
 		}
 		close(output)
