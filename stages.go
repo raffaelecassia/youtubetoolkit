@@ -4,6 +4,7 @@ import (
 	"encoding/csv"
 	"fmt"
 	"io"
+	"sort"
 	"sync"
 
 	"github.com/raffaelecassia/youtubetoolkit/bigg"
@@ -151,6 +152,44 @@ func playlistItem2record(input <-chan *bigg.PlaylistItem) <-chan []string {
 				i.Snippet.VideoOwnerChannelId,
 				i.Snippet.VideoOwnerChannelTitle,
 			}
+		}
+		close(output)
+	}()
+	return output
+}
+
+func uploadsPlaylistItem2record(input <-chan *bigg.PlaylistItem) <-chan []string {
+	output := make(chan []string, 10)
+	go func() {
+		for i := range input {
+			output <- []string{
+				i.Snippet.ResourceId.VideoId,
+				i.Snippet.PublishedAt,
+				i.Snippet.Title,
+				i.Snippet.VideoOwnerChannelId,
+				i.Snippet.VideoOwnerChannelTitle,
+			}
+		}
+		close(output)
+	}()
+	return output
+}
+
+func sortPlaylistItemByPublishedAt(input <-chan *bigg.PlaylistItem) <-chan *bigg.PlaylistItem {
+	output := make(chan *bigg.PlaylistItem, 10)
+	go func() {
+		items := []*bigg.PlaylistItem{}
+		// buffers all items
+		for i := range input {
+			items = append(items, i)
+		}
+		// sorts
+		sort.Slice(items, func(i, j int) bool {
+			return items[i].Snippet.PublishedAt < items[j].Snippet.PublishedAt
+		})
+		// sends items to chan
+		for _, pi := range items {
+			output <- pi
 		}
 		close(output)
 	}()

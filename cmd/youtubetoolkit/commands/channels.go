@@ -14,8 +14,10 @@ func LastUploads(parent *cobra.Command, tk *youtubetoolkit.Toolkit) *cobra.Comma
 	cmd := &cobra.Command{
 		Use:   "lastuploads",
 		Short: "Returns channels' last video uploads",
-		Long:  "Returns channels' last video uploads.\nChannels ids are received from stdin (one per line, or a csv with ids in the first column).",
-		Args:  cobra.NoArgs,
+		Long: `Returns channels' last video uploads sorted by the published date (oldest first).
+Channels IDs are received from stdin (one per line, or a csv with ids in the first column).
+Data printed to stdout is a CSV with columns "videoId, published_date, title, channelId, channelTitle".`,
+		Args: cobra.NoArgs,
 		Run: func(c *cobra.Command, _ []string) {
 			if checkStdinInput() {
 				since := time.Now().Add(-time.Hour * time.Duration(24*int64(days)))

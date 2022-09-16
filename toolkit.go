@@ -152,7 +152,7 @@ func (tk *Toolkit) CSVBulkAddVideoToPlaylist(playlistId string, input io.Reader,
 }
 
 // CSVLastUploads reads from input a list of channels ID and prints to output a csv
-// with the latest channel's video uploads since the time argument.
+// with the latest channel's video uploads since the time argument sorted by the published date (oldest first).
 func (tk *Toolkit) CSVLastUploads(input io.Reader, output io.Writer, since time.Time) error {
 	errors, err := multiErrorsHandler()
 
@@ -166,8 +166,11 @@ func (tk *Toolkit) CSVLastUploads(input io.Reader, output io.Writer, since time.
 	// fetch all video uploads using three parallel go routines
 	playlistItems := tk.channelIds2VideoUploads(errors, channelIds, filter, 3)
 
+	// sorts items
+	sorted := sortPlaylistItemByPublishedAt(playlistItems)
+
 	// convert items to records
-	outputrecords := playlistItem2record(playlistItems)
+	outputrecords := uploadsPlaylistItem2record(sorted)
 
 	// write csv
 	sinkrecords2csv(errors, outputrecords, output)
