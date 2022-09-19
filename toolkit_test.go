@@ -21,7 +21,10 @@ func TestCSVSubscriptions(t *testing.T) {
 		f.subslist = []bigg.Sub{newSub("A", "TA"), newSub("B", "TB"), newSub("C", "TC")}
 		s := youtubetoolkit.NewWithService(f)
 		w := &bytes.Buffer{}
-		s.CSVSubscriptions(w, false)
+		err := s.CSVSubscriptions(w, false)
+		if err != nil {
+			t.Error(err)
+		}
 		want := "A,TA\nB,TB\nC,TC\n"
 		got := w.String()
 		if diff := cmp.Diff(want, got); diff != "" {
@@ -68,11 +71,16 @@ func TestSubscribe(t *testing.T) {
 		f := newFakeService()
 		s := youtubetoolkit.NewWithService(f)
 
-		s.Subscribe("CH1")
-		s.Subscribe("CH6")
-		s.Subscribe("CH8")
+		_, err := s.Subscribe("CH1")
+		if err != nil {
+			t.Error(err)
+		}
+		_, err = s.Subscribe("CH6")
+		if err != nil {
+			t.Error(err)
+		}
 
-		want := []string{"CH1", "CH6", "CH8"}
+		want := []string{"CH1", "CH6"}
 		got := f.subinsert
 		if !reflect.DeepEqual(want, got) {
 			t.Errorf("want: %s got: %s", want, got)
@@ -88,7 +96,10 @@ func TestCSVBulkSubscribe(t *testing.T) {
 		in := "A,TA\nB,TB\nC,TC\nD,TD\nE,TE\n"
 		r := strings.NewReader(in)
 
-		s.CSVBulkSubscribe(r, io.Discard)
+		err := s.CSVBulkSubscribe(r, io.Discard)
+		if err != nil {
+			t.Error(err)
+		}
 
 		want := []string{"A", "B", "C", "D", "E"}
 		got := f.subinsert
@@ -104,7 +115,10 @@ func TestCSVPlaylists(t *testing.T) {
 		f.playlists = []bigg.Playlist{newPlaylist("aaa", "AAA", 3), newPlaylist("bbb", "BBB", 33)}
 		s := youtubetoolkit.NewWithService(f)
 		w := &bytes.Buffer{}
-		s.CSVPlaylists(w)
+		err := s.CSVPlaylists(w)
+		if err != nil {
+			t.Error(err)
+		}
 		want := "aaa,AAA,3\nbbb,BBB,33\n"
 		got := w.String()
 		if diff := cmp.Diff(want, got); diff != "" {
@@ -144,7 +158,10 @@ func TestCSVLastUploads(t *testing.T) {
 		inR := strings.NewReader(in)
 		oR := &bytes.Buffer{}
 
-		s.CSVLastUploads(inR, oR, since)
+		err := s.CSVLastUploads(inR, oR, since)
+		if err != nil {
+			t.Error(err)
+		}
 
 		got := strings.Split(oR.String(), "\n")
 		ok := len(got) == 5 && // the last \n counts

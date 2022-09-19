@@ -44,7 +44,11 @@ Data printed to stdout is a CSV with columns "videoId, title, channelId, channel
 		},
 	}
 	cmd.PersistentFlags().StringVarP(&id, "id", "", "", "playlist id, mandatory")
-	cmd.MarkPersistentFlagRequired("id")
+	err := cmd.MarkPersistentFlagRequired("id")
+	if err != nil {
+		fmt.Fprintln(os.Stderr, err)
+	}
+
 	_ = AddToPlaylist(cmd, tk) // sub command
 	parent.AddCommand(cmd)
 	return cmd
@@ -98,7 +102,10 @@ The flag --id is mandatory.`,
 						fmt.Fprintln(os.Stderr, "Error:", err)
 					}
 				} else {
-					c.Help()
+					err := c.Help()
+					if err != nil {
+						fmt.Fprintln(os.Stderr, err)
+					}
 					os.Exit(0)
 				}
 			}

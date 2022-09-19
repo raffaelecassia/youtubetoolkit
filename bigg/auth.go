@@ -197,7 +197,10 @@ func saveToken(file string, token *oauth2.Token) error {
 		return err
 	}
 	defer f.Close()
-	gob.NewEncoder(f).Encode(token)
+	err = gob.NewEncoder(f).Encode(token)
+	if err != nil {
+		return err
+	}
 	return nil
 }
 

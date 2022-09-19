@@ -27,7 +27,10 @@ Data printed to stdout is a CSV with columns "videoId, published_date, title, ch
 					fmt.Fprintln(os.Stderr, err)
 				}
 			} else {
-				c.Help()
+				err := c.Help()
+				if err != nil {
+					fmt.Fprintln(os.Stderr, err)
+				}
 				os.Exit(0)
 			}
 		},

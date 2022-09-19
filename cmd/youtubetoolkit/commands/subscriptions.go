@@ -57,7 +57,10 @@ To add multiple channels, send to stdin a list of channel ids (or a CSV with ids
 						fmt.Fprintln(os.Stderr, "Error:", err)
 					}
 				} else {
-					c.Help()
+					err := c.Help()
+					if err != nil {
+						fmt.Fprintln(os.Stderr, err)
+					}
 					os.Exit(0)
 				}
 			}
