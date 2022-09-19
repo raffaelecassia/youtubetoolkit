@@ -20,8 +20,8 @@ func Root(tk *youtubetoolkit.Toolkit) *cobra.Command {
 		Use:   "youtubetoolkit",
 		Short: "A toolkit for Youtube",
 		PersistentPreRun: func(c *cobra.Command, _ []string) {
-			// skip for these commands
-			if c.Use[:4] == "help" || (c.HasParent() && c.Parent().Use == "completion") {
+			// skip for help and completion commands (and hidden ones like __complete)
+			if c.Use[:4] == "help" || (c.HasParent() && c.Parent().Use == "completion") || c.Use[:2] == "__" {
 				return
 			}
 			//
@@ -56,8 +56,8 @@ func Root(tk *youtubetoolkit.Toolkit) *cobra.Command {
 			tk.SetLogWriter(os.Stderr)
 		},
 		PersistentPostRun: func(c *cobra.Command, _ []string) {
-			// skip for these commands
-			if c.Use[:4] == "help" || (c.HasParent() && c.Parent().Use == "completion") {
+			// skip for help and completion commands (and hidden ones like __complete)
+			if c.Use[:4] == "help" || (c.HasParent() && c.Parent().Use == "completion") || c.Use[:2] == "__" {
 				return
 			}
 			fmt.Fprintln(os.Stderr, "Quota cost:", ytsvc.GetCost(), "units")
