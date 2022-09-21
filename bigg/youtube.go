@@ -161,6 +161,14 @@ func (s *Youtube) PlaylistInsert(title string) (*Playlist, error) {
 	return &Playlist{pl}, err
 }
 
+// PlaylistDelete deletes a playlist from the authenticated user.
+// The GCloud quota impact is 50 units.
+func (s *Youtube) PlaylistDelete(playlistId string) error {
+	call := s.svc.Playlists.Delete(playlistId)
+	s.addcost(50)
+	return call.Do()
+}
+
 // PlaylistItemsList sends to out the items of a playlist until the filter function returns false.
 // Playlist id can be a user own playlist or a public playlist.
 // Items will contain only the "snippet" resource property (https://developers.google.com/youtube/v3/docs/playlistItems#snippet).

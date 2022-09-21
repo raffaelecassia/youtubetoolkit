@@ -82,8 +82,12 @@ func Execute() error {
 	_ = Subscribe(subs, tk)
 	_ = Unsubscribe(subs, tk)
 
-	_ = Playlists(root, tk)
-	_ = Playlist(root, tk)
+	pls := Playlists(root, tk)
+	_ = NewPlaylist(pls, tk)
+	_ = DelPlaylist(pls, tk)
+
+	pl := Playlist(root, tk)
+	_ = AddToPlaylist(pl, tk)
 
 	_ = LastUploads(root, tk)
 

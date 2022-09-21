@@ -24,7 +24,6 @@ Data printed to stdout is a CSV with columns "id, title, videoCount".`,
 		},
 	}
 	parent.AddCommand(cmd)
-	_ = NewPlaylist(cmd, tk) // sub command
 	return cmd
 }
 
@@ -48,8 +47,6 @@ Data printed to stdout is a CSV with columns "videoId, title, channelId, channel
 	if err != nil {
 		fmt.Fprintln(os.Stderr, err)
 	}
-
-	_ = AddToPlaylist(cmd, tk) // sub command
 	parent.AddCommand(cmd)
 	return cmd
 }
@@ -66,6 +63,22 @@ func NewPlaylist(parent *cobra.Command, tk *youtubetoolkit.Toolkit) *cobra.Comma
 				fmt.Fprintln(os.Stderr, "Error:", err)
 			} else {
 				fmt.Fprintln(os.Stdout, id)
+			}
+		},
+	}
+	parent.AddCommand(cmd)
+	return cmd
+}
+
+func DelPlaylist(parent *cobra.Command, tk *youtubetoolkit.Toolkit) *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "del [playlist id]",
+		Short: "Deletes a playlist",
+		Args:  cobra.ExactArgs(1),
+		Run: func(_ *cobra.Command, args []string) {
+			err := tk.DeletePlaylist(args[0])
+			if err != nil {
+				fmt.Fprintln(os.Stderr, "Error:", err)
 			}
 		},
 	}

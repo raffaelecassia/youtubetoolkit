@@ -15,7 +15,6 @@ import (
 )
 
 func TestCSVSubscriptions(t *testing.T) {
-
 	t.Run("write a csv with 3 subs", func(t *testing.T) {
 		f := newFakeService()
 		f.subslist = []bigg.Sub{newSub("A", "TA"), newSub("B", "TB"), newSub("C", "TC")}
@@ -31,39 +30,6 @@ func TestCSVSubscriptions(t *testing.T) {
 			t.Errorf("mismatch (-want +got):\n%s", diff)
 		}
 	})
-
-	// t.Run("write a csv with 5 subs from 3 pages", func(t *testing.T) {
-	// 	// f := newFakeService([]*youtube.SubscriptionListResponse{
-	// 	// 	newSubList("", "N1", newSub("A", "TA"), newSub("B", "TB")),
-	// 	// 	newSubList("N0", "N2", newSub("C", "TC"), newSub("D", "TD")),
-	// 	// 	newSubList("N1", "", newSub("E", "TE")),
-	// 	// })
-	// 	f := newFakeService(newSub("A", "TA"), newSub("B", "TB")),
-	// 		newSubList("N0", "N2", newSub("C", "TC"), newSub("D", "TD")),
-	// 		newSubList("N1", "", newSub("E", "TE")),
-	// 	})
-
-	// 	s := youtubetoolkit.NewWithService(f)
-	// 	w := &bytes.Buffer{}
-	// 	s.CSVSubscriptions(w)
-
-	// 	want := "A,TA\nB,TB\nC,TC\nD,TD\nE,TE\n"
-	// 	got := w.String()
-	// 	if diff := cmp.Diff(want, got); diff != "" {
-	// 		t.Errorf("mismatch (-want +got):\n%s", diff)
-	// 	}
-
-	// 	want1 := 3
-	// 	got1 := f.slCalls
-	// 	if got1 != want1 {
-	// 		t.Errorf("must call api %d times, got: %d", want1, got1)
-	// 	}
-	// 	want2 := []string{" ", "N1", "N2"}
-	// 	got2 := f.slPgTks
-	// 	if !reflect.DeepEqual(want2, got2) {
-	// 		t.Errorf("must properly request next pages, want: %s got: %s", want2, got2)
-	// 	}
-	// })
 }
 
 func TestSubscribe(t *testing.T) {
@@ -188,6 +154,11 @@ type fakeService struct {
 	playlists     []bigg.Playlist
 	playlistitems map[string][]bigg.PlaylistItem
 	channels      map[string]bigg.Channel
+}
+
+// PlaylistDelete implements youtubetoolkit.YoutubeService
+func (*fakeService) PlaylistDelete(playlistId string) error {
+	panic("unimplemented")
 }
 
 // SubscriptionDelete implements youtubetoolkit.YoutubeService

@@ -20,11 +20,15 @@ $ youtubetoolkit lastuploads < channelIds.csv | youtubetoolkit playlist --id $PL
 Complete list of commands:
 ```
 youtubetoolkit lastuploads --days <#>
+
 youtubetoolkit subscriptions list
 youtubetoolkit subscriptions add <channel id>
 youtubetoolkit subscriptions del <channel id>
+
 youtubetoolkit playlists
 youtubetoolkit playlists new <playlist name>
+youtubetoolkit playlists del <playlist id>
+
 youtubetoolkit playlist --id <playlist_id>
 youtubetoolkit playlist --id <playlist_id> add <video id>
 ```

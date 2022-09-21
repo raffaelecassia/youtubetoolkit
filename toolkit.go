@@ -20,6 +20,7 @@ type YoutubeService interface {
 	SubscriptionDelete(channelId string) error
 	PlaylistsList(out chan<- *bigg.Playlist) error
 	PlaylistInsert(title string) (*bigg.Playlist, error)
+	PlaylistDelete(playlistId string) error
 	PlaylistItemsList(id string, filter func(*bigg.PlaylistItem) bool, out chan<- *bigg.PlaylistItem) error
 	PlaylistItemsInsert(playlistId, videoId string) (*bigg.PlaylistItem, error)
 	GetChannelInfo(id string) (*bigg.Channel, error)
@@ -144,6 +145,11 @@ func (tk *Toolkit) NewPlaylist(title string) (string, error) {
 		return "", err
 	}
 	return pl.Id, nil
+}
+
+// DeletePlaylist deletes a user playlist.
+func (tk *Toolkit) DeletePlaylist(playlistId string) error {
+	return tk.service.PlaylistDelete(playlistId)
 }
 
 // AddVideoToPlaylist adds a video to a playlist.
