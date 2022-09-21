@@ -8,20 +8,21 @@ Data output will be printed to STDOUT while info and errors to STDERR. Commands 
 
 For example you can do something like this to copy subscriptions from one account to another:
 ```
-$ youtubetoolkit -t account1 subscriptions | youtubetoolkit -t account2 subscribe
+$ youtubetoolkit -t account1 subscriptions list | youtubetoolkit -t account2 subscriptions add
 ```
 
 Or you can add to a playlist the last 7 days video uploads from a list of channels:
 ```
 $ PLIST=`youtubetoolkit playlists new test-playlist`
-$ youtubetoolkit lastuploads < channelIds.csv | youtubetoolkit --id $PLIST add
+$ youtubetoolkit lastuploads < channelIds.csv | youtubetoolkit playlist --id $PLIST add
 ```
 
 Complete list of commands:
 ```
 youtubetoolkit lastuploads --days <#>
-youtubetoolkit subscriptions
-youtubetoolkit subscribe <channel id>
+youtubetoolkit subscriptions list
+youtubetoolkit subscriptions add <channel id>
+youtubetoolkit subscriptions del <channel id>
 youtubetoolkit playlists
 youtubetoolkit playlists new <playlist name>
 youtubetoolkit playlist --id <playlist_id>

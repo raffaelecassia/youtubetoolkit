@@ -49,7 +49,6 @@ func (s *Youtube) SubscriptionsList(out chan<- *Sub) error {
 	call := s.svc.Subscriptions.List([]string{"snippet"})
 	call.Mine(true)
 	call.MaxResults(50)
-	// call.ForChannelId("UCOEjWOfsNRvTDtBzGNnniuA") // used to get the id of a user subscription
 	call.Order("alphabetical")
 	t := "-"
 	for t != "" {
@@ -83,6 +82,34 @@ func (s *Youtube) SubscriptionInsert(channelId string) (*Sub, error) {
 	s.addcost(50)
 	r, err := call.Do()
 	return &Sub{r}, err
+}
+
+// SubscriptionDelete delete a channel from subscriptions for the authenticated user's channel.
+// This command will results in two api requests (subscriptionId from the channelId and the delete op).
+// The GCloud quota impact is 51 units.
+func (s *Youtube) SubscriptionDelete(channelId string) error {
+	// find the sub id from channel id
+	lcall := s.svc.Subscriptions.List([]string{"snippet"})
+	lcall.Mine(true)
+	lcall.MaxResults(1)
+	lcall.ForChannelId(channelId)
+	s.addcost(1)
+	list, err := lcall.Do()
+	if err != nil {
+		return fmt.Errorf("subs delete error (list.ForChannelId '%s'): %w", channelId, err)
+	}
+	if len(list.Items) != 1 {
+		return fmt.Errorf("subs delete: channelId '%s' not in subscriptions", channelId)
+	}
+	subid := list.Items[0].Id
+	// delete sub
+	call := s.svc.Subscriptions.Delete(subid)
+	s.addcost(50)
+	err = call.Do()
+	if err != nil {
+		return fmt.Errorf("subs delete error (channelId '%s', subId '%s'): %w", channelId, subid, err)
+	}
+	return nil
 }
 
 //

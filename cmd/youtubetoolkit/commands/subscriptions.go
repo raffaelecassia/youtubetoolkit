@@ -10,9 +10,19 @@ import (
 )
 
 func Subscriptions(parent *cobra.Command, tk *youtubetoolkit.Toolkit) *cobra.Command {
-	var extracols bool
 	cmd := &cobra.Command{
 		Use:   "subscriptions",
+		Short: "Manage user subscriptions",
+		Args:  cobra.NoArgs,
+	}
+	parent.AddCommand(cmd)
+	return cmd
+}
+
+func SubscriptionsList(parent *cobra.Command, tk *youtubetoolkit.Toolkit) *cobra.Command {
+	var extracols bool
+	cmd := &cobra.Command{
+		Use:   "list",
 		Short: "Returns all channels from user subscriptions",
 		Long: `Returns all channels from user subscriptions.
 Data printed to stdout is a CSV with columns "channelId, channelTitle".`,
@@ -32,16 +42,16 @@ Data printed to stdout is a CSV with columns "channelId, channelTitle".`,
 func Subscribe(parent *cobra.Command, tk *youtubetoolkit.Toolkit) *cobra.Command {
 	var printid bool
 	cmd := &cobra.Command{
-		Use:   "subscribe [channel id]",
-		Short: "Adds a channel to user subscriptions",
-		Long: `Adds a channel to user subscriptions.
+		Use:   "add [channel id]",
+		Short: "Subscribe to a channel",
+		Long: `Subscribe to a channel.
 To add multiple channels, send to stdin a list of channel ids (or a CSV with ids in the first column)`,
 		Args: cobra.MaximumNArgs(1),
 		Run: func(c *cobra.Command, args []string) {
 			if len(args) == 1 {
 				id, err := tk.Subscribe(args[0])
 				if err != nil {
-					return
+					return // errors are already printed to stderr
 				}
 				if printid {
 					fmt.Fprintln(os.Stdout, id)
@@ -67,6 +77,20 @@ To add multiple channels, send to stdin a list of channel ids (or a CSV with ids
 		},
 	}
 	cmd.Flags().BoolVarP(&printid, "print-id", "i", false, "print to stdout the subscription id of the added channel(s)")
+	parent.AddCommand(cmd)
+	return cmd
+}
+
+func Unsubscribe(parent *cobra.Command, tk *youtubetoolkit.Toolkit) *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "del [channel id]",
+		Short: "Unsubscribe from a channel",
+		// Long:  "Unsubscribe from a channel.",
+		Args: cobra.ExactArgs(1),
+		Run: func(c *cobra.Command, args []string) {
+			_ = tk.Unsubscribe(args[0]) // errors are already printed to stderr
+		},
+	}
 	parent.AddCommand(cmd)
 	return cmd
 }

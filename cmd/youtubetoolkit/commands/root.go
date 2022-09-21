@@ -76,8 +76,11 @@ func Execute() error {
 	tk := youtubetoolkit.New()
 
 	root := Root(tk)
-	_ = Subscriptions(root, tk)
-	_ = Subscribe(root, tk)
+
+	subs := Subscriptions(root, tk)
+	_ = SubscriptionsList(subs, tk)
+	_ = Subscribe(subs, tk)
+	_ = Unsubscribe(subs, tk)
 
 	_ = Playlists(root, tk)
 	_ = Playlist(root, tk)

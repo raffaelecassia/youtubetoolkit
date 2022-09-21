@@ -190,6 +190,11 @@ type fakeService struct {
 	channels      map[string]bigg.Channel
 }
 
+// SubscriptionDelete implements youtubetoolkit.YoutubeService
+func (*fakeService) SubscriptionDelete(channelId string) error {
+	panic("unimplemented")
+}
+
 // GetChannelInfo implements youtubetoolkit.YoutubeService
 func (s *fakeService) GetChannelInfo(id string) (*bigg.Channel, error) {
 	o := s.channels[id]

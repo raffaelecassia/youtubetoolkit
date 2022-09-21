@@ -17,6 +17,7 @@ type Toolkit struct {
 type YoutubeService interface {
 	SubscriptionsList(out chan<- *bigg.Sub) error
 	SubscriptionInsert(channelId string) (*bigg.Sub, error)
+	SubscriptionDelete(channelId string) error
 	PlaylistsList(out chan<- *bigg.Playlist) error
 	PlaylistInsert(title string) (*bigg.Playlist, error)
 	PlaylistItemsList(id string, filter func(*bigg.PlaylistItem) bool, out chan<- *bigg.PlaylistItem) error
@@ -68,6 +69,22 @@ func (tk *Toolkit) Subscribe(channelId string) (string, error) {
 		return sub.Id, nil
 	}
 	return "", err
+}
+
+// Unsubscribe removes channelId from the user subscriptions.
+func (tk *Toolkit) Unsubscribe(channelId string) error {
+	tk.logf("unsubscribing from %s... ", channelId)
+	err := tk.service.SubscriptionDelete(channelId)
+	if err != nil {
+		if e, ok := err.(*googleapi.Error); ok {
+			tk.log("Error:", e.Message)
+		} else {
+			tk.log(err)
+		}
+		return err
+	}
+	tk.log("done")
+	return nil
 }
 
 // CSVBulkSubscribe reads from input a list of channel IDs and subscribe to them.
