@@ -1,19 +1,30 @@
+//go:build integration
+
 // Integration tests
 //
 // To run these tests a client_secret.json and a valid auth token (see the const values)
 // inside the bin/ dir (where make will place the output of go build) are required.
+// Tests are run against a build of the toolkit under bin/ dir.
+//
+// Just a warning. Running these tests will cost you quota.
+// Subscriptions test will cost at least 50 + 1 + 51 = 102 units.
+// Playlists test will cost at least 50 + 1 + 50 + 1 + 50 = 152 units.
+// Subs and playlists pagination may require more quota use.
 //
 // To execute, launch `make acceptance` from root dir.
 //
 // TODO cover more cases:
 // - subs and playlists pagination fetching (when >50 items)
+//
+// vscode users should add these fields to workspace settings.json to allow gopls to
+// build this file but not execute it during unit testing:
+// { "go.buildTags": "integration", "go.testTags": "" }
 package main_test
 
 import (
 	"fmt"
 	"io"
 	"math/rand"
-	"os"
 	"os/exec"
 	"strings"
 	"testing"
@@ -27,8 +38,6 @@ const (
 )
 
 func Test_CLI_Subscriptions(t *testing.T) {
-	thisIsAnIntegrationTest(t)
-
 	testChannelID := "UCuAXFkgsw1L7xaCfnd5JJOw"
 
 	// adds a channel to subs
@@ -61,8 +70,6 @@ func Test_CLI_Subscriptions(t *testing.T) {
 }
 
 func Test_CLI_Playlists(t *testing.T) {
-	thisIsAnIntegrationTest(t)
-
 	testVideoID := "dQw4w9WgXcQ"
 	playlistName := "test-" + randSeq(10)
 
@@ -163,13 +170,6 @@ func run(t *testing.T, stdin string, args ...string) (stdout, stderr string) {
 	}
 
 	return string(stdoutB), string(stderrB)
-}
-
-func thisIsAnIntegrationTest(t *testing.T) {
-	t.Helper()
-	if os.Getenv("INTEGRATION_TESTS") == "" {
-		t.Skip("Skipped integration tests")
-	}
 }
 
 func randSeq(n int) string {
