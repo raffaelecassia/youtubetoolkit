@@ -55,14 +55,23 @@ func NewPlaylist(parent *cobra.Command, tk *youtubetoolkit.Toolkit) *cobra.Comma
 	cmd := &cobra.Command{
 		Use:   "new [playlist name]",
 		Short: "Creates a new playlist",
-		Long:  "Creates a new playlist.\nPrints to stdout the playlist id.",
-		Args:  cobra.ExactArgs(1),
+		Long: `Creates a new playlist.
+To also add videos to the newly created playlist, send to stdin a list of 
+video ids (or a CSV with ids in the first column).
+Prints to stdout the playlist id.`,
+		Args: cobra.ExactArgs(1),
 		Run: func(_ *cobra.Command, args []string) {
 			id, err := tk.NewPlaylist(args[0])
 			if err != nil {
 				fmt.Fprintln(os.Stderr, "Error:", err)
 			} else {
 				fmt.Fprintln(os.Stdout, id)
+				if checkStdinInput() {
+					err := tk.CSVBulkAddVideoToPlaylist(id, os.Stdin, io.Discard)
+					if err != nil {
+						fmt.Fprintln(os.Stderr, "Error:", err)
+					}
+				}
 			}
 		},
 	}

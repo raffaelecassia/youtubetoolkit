@@ -13,8 +13,7 @@ $ youtubetoolkit -t account1 subscriptions list | youtubetoolkit -t account2 sub
 
 Or you can add to a playlist the last 7 days video uploads from a list of channels:
 ```
-$ PLIST=`youtubetoolkit playlists new test-playlist`
-$ youtubetoolkit lastuploads < channelIds.csv | youtubetoolkit playlist --id $PLIST add
+$ youtubetoolkit lastuploads < channelIds.csv | youtubetoolkit playlists new test-playlist
 ```
 
 Complete list of commands:
