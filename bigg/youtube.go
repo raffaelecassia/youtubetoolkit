@@ -173,7 +173,7 @@ func (s *Youtube) PlaylistDelete(playlistId string) error {
 // Playlist id can be a user own playlist or a public playlist.
 // Items will contain only the "snippet" resource property (https://developers.google.com/youtube/v3/docs/playlistItems#snippet).
 // The GCloud quota impact is 1 unit every 50 items fetched.
-func (s *Youtube) PlaylistItemsList(playlistId string, filter func(*PlaylistItem) bool, out chan<- *PlaylistItem) error {
+func (s *Youtube) PlaylistItemsList(playlistId string, filter func(*PlaylistItem) (bool, error), out chan<- *PlaylistItem) error {
 	call := s.svc.PlaylistItems.List([]string{"snippet"})
 	call.PlaylistId(playlistId)
 	call.MaxResults(50)
@@ -186,7 +186,10 @@ func (s *Youtube) PlaylistItemsList(playlistId string, filter func(*PlaylistItem
 		}
 		for _, pli := range res.Items {
 			o := &PlaylistItem{pli}
-			if filter(o) {
+			ok, err := filter(o)
+			if err != nil {
+				return fmt.Errorf("playlist items list filter error (id=\"%s\" and page=\"%s\"): %w", playlistId, t, err)
+			} else if ok {
 				out <- o
 			} else {
 				return nil

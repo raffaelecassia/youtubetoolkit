@@ -173,10 +173,13 @@ func (s *fakeService) GetChannelInfo(id string) (*bigg.Channel, error) {
 }
 
 // PlaylistItemsListFiltered implements youtubetoolkit.YoutubeService
-func (s *fakeService) PlaylistItemsList(playlistId string, filter func(*bigg.PlaylistItem) bool, out chan<- *bigg.PlaylistItem) error {
+func (s *fakeService) PlaylistItemsList(playlistId string, filter func(*bigg.PlaylistItem) (bool, error), out chan<- *bigg.PlaylistItem) error {
 	for _, v := range s.playlistitems[playlistId] {
 		o := v
-		if filter(&o) {
+		ok, err := filter(&o)
+		if err != nil {
+			return err
+		} else if ok {
 			out <- &o
 		} else {
 			return nil

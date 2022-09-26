@@ -3,7 +3,6 @@ package youtubetoolkit
 import (
 	"fmt"
 	"io"
-	"os"
 	"time"
 
 	"github.com/raffaelecassia/youtubetoolkit/bigg"
@@ -21,23 +20,22 @@ func (tk *Toolkit) logf(format string, a ...any) {
 	fmt.Fprintf(tk.logWriter, format, a...)
 }
 
-func sinceDatePlaylistItems(since time.Time) func(i *bigg.PlaylistItem) bool {
-	return func(i *bigg.PlaylistItem) bool {
+func sinceDatePlaylistItems(since time.Time) func(i *bigg.PlaylistItem) (bool, error) {
+	return func(i *bigg.PlaylistItem) (bool, error) {
 		// The date and time that the item was added to the playlist.
 		// The value is specified in ISO 8601 format.
 		// https://developers.google.com/youtube/v3/docs/playlistItems#snippet.publishedAt
 		pub, err := time.Parse(bigg.ISO8601_LAYOUT, i.Snippet.PublishedAt)
 		if err != nil {
-			fmt.Fprintf(os.Stderr, "time error %s: %v\n", i.Snippet.PublishedAt, err) // FIXME must be always shown
-			return false
+			return false, fmt.Errorf("time error '%s': %w", i.Snippet.PublishedAt, err)
 		}
-		return pub.After(since)
+		return pub.After(since), nil
 	}
 }
 
-func allPlaylistItems() func(i *bigg.PlaylistItem) bool {
-	return func(i *bigg.PlaylistItem) bool {
-		return true
+func allPlaylistItems() func(i *bigg.PlaylistItem) (bool, error) {
+	return func(i *bigg.PlaylistItem) (bool, error) {
+		return true, nil
 	}
 }
 

@@ -21,7 +21,7 @@ type YoutubeService interface {
 	PlaylistsList(out chan<- *bigg.Playlist) error
 	PlaylistInsert(title string) (*bigg.Playlist, error)
 	PlaylistDelete(playlistId string) error
-	PlaylistItemsList(id string, filter func(*bigg.PlaylistItem) bool, out chan<- *bigg.PlaylistItem) error
+	PlaylistItemsList(id string, filter func(*bigg.PlaylistItem) (bool, error), out chan<- *bigg.PlaylistItem) error
 	PlaylistItemsInsert(playlistId, videoId string) (*bigg.PlaylistItem, error)
 	GetChannelInfo(id string) (*bigg.Channel, error)
 }

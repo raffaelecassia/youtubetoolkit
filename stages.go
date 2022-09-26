@@ -10,7 +10,7 @@ import (
 	"github.com/raffaelecassia/youtubetoolkit/bigg"
 )
 
-func (tk *Toolkit) channelIds2VideoUploads(errors chan<- error, input <-chan string, filter func(*bigg.PlaylistItem) bool, numDigesters int) <-chan *bigg.PlaylistItem {
+func (tk *Toolkit) channelIds2VideoUploads(errors chan<- error, input <-chan string, filter func(*bigg.PlaylistItem) (bool, error), numDigesters int) <-chan *bigg.PlaylistItem {
 	output := make(chan *bigg.PlaylistItem, 10)
 	var wg sync.WaitGroup
 	wg.Add(numDigesters)
