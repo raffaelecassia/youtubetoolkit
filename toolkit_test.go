@@ -2,7 +2,6 @@ package youtubetoolkit_test
 
 import (
 	"bytes"
-	"io"
 	"reflect"
 	"strings"
 	"testing"
@@ -20,7 +19,8 @@ func TestCSVSubscriptions(t *testing.T) {
 		f.subslist = []bigg.Sub{newSub("A", "TA"), newSub("B", "TB"), newSub("C", "TC")}
 		s := youtubetoolkit.NewWithService(f)
 		w := &bytes.Buffer{}
-		err := s.CSVSubscriptions(w, false)
+		err := s.Subscriptions(
+			youtubetoolkit.CSVSink(w, &[]string{"ChannelId", "ChannelTitle"}))
 		if err != nil {
 			t.Error(err)
 		}
@@ -37,11 +37,11 @@ func TestSubscribe(t *testing.T) {
 		f := newFakeService()
 		s := youtubetoolkit.NewWithService(f)
 
-		_, err := s.Subscribe("CH1")
+		err := s.Subscribe(youtubetoolkit.SingleStringSource("CH1"), youtubetoolkit.NullSink())
 		if err != nil {
 			t.Error(err)
 		}
-		_, err = s.Subscribe("CH6")
+		err = s.Subscribe(youtubetoolkit.SingleStringSource("CH6"), youtubetoolkit.NullSink())
 		if err != nil {
 			t.Error(err)
 		}
@@ -62,7 +62,7 @@ func TestCSVBulkSubscribe(t *testing.T) {
 		in := "A,TA\nB,TB\nC,TC\nD,TD\nE,TE\n"
 		r := strings.NewReader(in)
 
-		err := s.CSVBulkSubscribe(r, io.Discard)
+		err := s.Subscribe(youtubetoolkit.CSVFirstFieldOnlySource(r), youtubetoolkit.NullSink())
 		if err != nil {
 			t.Error(err)
 		}
@@ -81,7 +81,7 @@ func TestCSVPlaylists(t *testing.T) {
 		f.playlists = []bigg.Playlist{newPlaylist("aaa", "AAA", 3), newPlaylist("bbb", "BBB", 33)}
 		s := youtubetoolkit.NewWithService(f)
 		w := &bytes.Buffer{}
-		err := s.CSVPlaylists(w)
+		err := s.Playlists(youtubetoolkit.CSVSink(w, &[]string{"PlaylistId", "PlaylistTitle", "VideoCount"}))
 		if err != nil {
 			t.Error(err)
 		}
@@ -124,15 +124,17 @@ func TestCSVLastUploads(t *testing.T) {
 		inR := strings.NewReader(in)
 		oR := &bytes.Buffer{}
 
-		err := s.CSVLastUploads(inR, oR, since)
+		err := s.LastUploads(since,
+			youtubetoolkit.CSVFirstFieldOnlySource(inR),
+			youtubetoolkit.CSVSink(oR, &[]string{"VideoId", "VideoTitle"}))
 		if err != nil {
 			t.Error(err)
 		}
 
 		got := strings.Split(oR.String(), "\n")
 		ok := len(got) == 5 && // the last \n counts
-			SliceContains(got, "VIDEO1,") && SliceContains(got, "VIDEO2,") &&
-			SliceContains(got, "VIDEO3,") && SliceContains(got, "VIDEO4,")
+			sliceContains(got, "VIDEO1,T1") && sliceContains(got, "VIDEO2,T2") &&
+			sliceContains(got, "VIDEO3,T3") && sliceContains(got, "VIDEO4,T4")
 
 		if !ok {
 			t.Errorf("want 4 videos, got: %s", got)
@@ -228,6 +230,7 @@ func (s *fakeService) SubscriptionInsert(chanid string) (*bigg.Sub, error) {
 func newSub(id, title string) bigg.Sub {
 	return bigg.Sub{
 		Subscription: &youtube.Subscription{
+			Id:   "SUBID-" + id,
 			Kind: "youtube#subscription",
 			Snippet: &youtube.SubscriptionSnippet{
 				Title: title,
@@ -235,6 +238,11 @@ func newSub(id, title string) bigg.Sub {
 				ResourceId: &youtube.ResourceId{
 					Kind:      "youtube#channel",
 					ChannelId: id,
+				},
+				Thumbnails: &youtube.ThumbnailDetails{
+					Default: &youtube.Thumbnail{
+						Url: "",
+					},
 				},
 			},
 		},
@@ -293,9 +301,10 @@ func newChannel(uploadsPl string) bigg.Channel {
 	}
 }
 
-func SliceContains(s []string, m string) bool {
+func sliceContains(s []string, m string) bool {
 	for _, v := range s {
-		if strings.Contains(v, m) {
+		// if strings.Contains(v, m) {
+		if v == m {
 			return true
 		}
 	}

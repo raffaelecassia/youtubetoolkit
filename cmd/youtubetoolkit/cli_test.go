@@ -95,7 +95,7 @@ func Test_CLI_Playlists(t *testing.T) {
 
 	// adds a video to playlist
 	gotOut, gotErr = run(t, "", "playlist", "--id", playlistID, "add", testVideoID)
-	want = gotOut == "" && gotErr == "Quota cost: 50 units\n"
+	want = gotOut == "" && gotErr == "Adding video dQw4w9WgXcQ\nQuota cost: 50 units\n"
 	if !want {
 		t.Errorf("should add video '%s' to playlist '%s'.\nOUT=%s\nERR=%s\n", testVideoID, playlistID, gotOut, gotErr)
 	}
@@ -166,7 +166,7 @@ func run(t *testing.T, stdin string, args ...string) (stdout, stderr string) {
 
 	// wait for cmd
 	if err := cmd.Wait(); err != nil {
-		t.Fatal(err)
+		t.Fatal(err, string(stderrB))
 	}
 
 	return string(stdoutB), string(stderrB)

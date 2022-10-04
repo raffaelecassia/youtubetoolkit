@@ -2,9 +2,14 @@
 
 ## usage overview
 
-When launching the CLI with a command, it will print a URL which you must open in your browser (if it fails to automagically open a browser for you) to authorize the CLI to act on your behalf on your youtube account. The flag `--token` allows you to specify the filename where the CLI will store the auth token.
+When launching the CLI with a command for the first time, it will print a URL which 
+you must open in your browser (if it fails to automagically open a browser for you) 
+to authorize the CLI to act on your behalf on your youtube account. 
+The flag `--token` allows you to specify the filename where the CLI will store the auth token.
 
-Data output will be printed to STDOUT while info and errors to STDERR. Commands like subscribe and playist-add can receive data from STDIN. This allow you to do your wizardry with OS pipes and i/o redirections. 
+Data output will be printed to STDOUT while info and errors to STDERR. Commands like 
+subscribe and playist-add can receive data from STDIN. This allow you to do your 
+wizardry with OS pipes and i/o redirections. 
 
 For example you can do something like this to copy subscriptions from one account to another:
 ```
@@ -32,6 +37,8 @@ youtubetoolkit playlist --id <playlist_id>
 youtubetoolkit playlist --id <playlist_id> add <video id>
 ```
 
+Output formats available: `--csv`, `--table`, `--jsonl`.
+
 Please use CLI flag `--help` to get additional help for every single command.
 
 ## install
@@ -52,7 +59,12 @@ To use the toolkit you need a OAuth2.0 client id and secret from Google Cloud:
 - rename the json file to `client_secret.json` (it's the default filename the CLI will search for)
     - needless to say, do NOT disclose this file
 
-As you may know, Youtube API access isn't "free" but it's subjected to [quota](https://console.cloud.google.com/apis/api/youtube.googleapis.com/quotas) of your Google Cloud project. A user/dev project should have a total of 10.000 units per day, plenty for readonly operations (only 1 unit) but not for create/insert things. API operations like subscribe to a channel, create a playlist, add a video to a playlist all costs 50 units. Or 200 inserts per day before running into "quota exeeded" errors. The CLI will output the quota impact after every execution.
+As you may know, Youtube API access isn't "free" but it's subjected to [quota](https://console.cloud.google.com/apis/api/youtube.googleapis.com/quotas) 
+of your Google Cloud project. A user/dev project should have a total of 10.000 units 
+per day, plenty for readonly operations (only 1 unit) but not for create/insert things. 
+API operations like subscribe to a channel, create a playlist, add a video to a 
+playlist all costs 50 units. Or 200 inserts per day before running into "quota exeeded" 
+errors. The CLI will output the quota impact after every execution.
 
 ## contributing
 

@@ -1,12 +1,10 @@
 package youtubetoolkit
 
 import (
-	"fmt"
 	"io"
 	"time"
 
 	"github.com/raffaelecassia/youtubetoolkit/bigg"
-	"google.golang.org/api/googleapi"
 )
 
 type Toolkit struct {
@@ -38,106 +36,80 @@ func (tk *Toolkit) SetService(service YoutubeService) {
 	tk.service = service
 }
 
-// CSVSubscriptions prints to output all the channels from user subscription.
-// Output is CSV formatted with columns "channelId, title".
-// A true extracols will output also columns "url, thumbnail, subscriptionId".
-func (tk *Toolkit) CSVSubscriptions(output io.Writer, extracols bool) error {
+// Subscriptions gets all channels from user subscription.
+// Flow: only sink is required
+func (tk *Toolkit) Subscriptions(opts ...FlowOption) error {
+	flow := options2flowconfig(opts...)
 	errors, err := multiErrorsHandler()
 	subs := make(chan *bigg.Sub)
 	go func() {
 		errors <- tk.service.SubscriptionsList(subs)
 		close(subs)
 	}()
-	records := sub2record(subs, extracols)
-	sinkrecords2csv(errors, records, output)
+	items := sub2item(subs)
+	flow.itemSink(errors, items)
 	close(errors)
 	return <-err
 }
 
-// Subscribe adds channelId to the user subscriptions.
-// Returns the subscription ID or error.
-func (tk *Toolkit) Subscribe(channelId string) (string, error) {
-	tk.logf("subscribing to %s... ", channelId)
-	sub, err := tk.service.SubscriptionInsert(channelId)
-	if err != nil {
-		if e, ok := err.(*googleapi.Error); ok {
-			tk.log("Error:", e.Message)
-		} else {
-			tk.log(err)
-		}
-	} else {
-		tk.log("channel", sub.Snippet.Title, "added")
-		return sub.Id, nil
-	}
-	return "", err
+// Subscribe adds channels to user subscriptions.
+// Flow: source and sink are required
+func (tk *Toolkit) Subscribe(opts ...FlowOption) error {
+	flow := options2flowconfig(opts...)
+	errors, err := multiErrorsHandler()
+	channelIds := flow.stringSource(errors)
+	subs := tk.channels2newsubscriptions(errors, channelIds)
+	items := sub2item(subs)
+	flow.itemSink(errors, items)
+	close(errors)
+	return <-err
 }
 
-// Unsubscribe removes channelId from the user subscriptions.
+// Unsubscribe removes channel from user subscriptions.
 func (tk *Toolkit) Unsubscribe(channelId string) error {
 	tk.logf("unsubscribing from %s... ", channelId)
 	err := tk.service.SubscriptionDelete(channelId)
 	if err != nil {
-		if e, ok := err.(*googleapi.Error); ok {
-			tk.log("Error:", e.Message)
-		} else {
-			tk.log(err)
-		}
+		tk.log("fail!")
 		return err
 	}
 	tk.log("done")
 	return nil
 }
 
-// CSVBulkSubscribe reads from input a list of channel IDs and subscribe to them.
-// It writes to output the subscription IDs.
-func (tk *Toolkit) CSVBulkSubscribe(input io.Reader, output io.Writer) error {
-	errors, err := multiErrorsHandler()
-	// read csv
-	inputrecords := csv2records(errors, input)
-	// first column contains the channel id
-	channelIds := recordColumnFilter(inputrecords, 0)
-	// subscribe
-	for id := range channelIds {
-		sid, err := tk.Subscribe(id)
-		if err == nil {
-			fmt.Fprintln(output, sid)
-		}
-	}
-	close(errors)
-	return <-err
-}
-
-// CSVPlaylists prints to output all user playlists.
-// Output is a CSV with columns "id, title, videoCount".
-func (tk *Toolkit) CSVPlaylists(output io.Writer) error {
+// Playlists gets all user playlists.
+// Flow: only sink is required
+func (tk *Toolkit) Playlists(opts ...FlowOption) error {
+	flow := options2flowconfig(opts...)
 	errors, err := multiErrorsHandler()
 	pls := make(chan *bigg.Playlist)
 	go func() {
 		errors <- tk.service.PlaylistsList(pls)
 		close(pls)
 	}()
-	records := playlist2record(pls)
-	sinkrecords2csv(errors, records, output)
+	items := playlist2item(pls)
+	flow.itemSink(errors, items)
 	close(errors)
 	return <-err
 }
 
-// CSVPlaylist accepts an ID and prints to output the playlist's videos.
-// Output is a CSV with columns "videoId, title, channelId, channelTitle".
-func (tk *Toolkit) CSVPlaylist(playlistId string, output io.Writer) error {
+// Playlist gets a playlist's videos.
+// Flow: only sink is required
+func (tk *Toolkit) Playlist(playlistId string, opts ...FlowOption) error {
+	flow := options2flowconfig(opts...)
 	errors, err := multiErrorsHandler()
 	pls := make(chan *bigg.PlaylistItem)
 	go func() {
 		errors <- tk.service.PlaylistItemsList(playlistId, allPlaylistItems(), pls)
 		close(pls)
 	}()
-	outputrecords := playlistItem2record(pls)
-	sinkrecords2csv(errors, outputrecords, output)
+	items := playlistItem2item(pls)
+	flow.itemSink(errors, items)
 	close(errors)
 	return <-err
 }
 
-// CreatePlaylist create a new playlist.
+// NewPlaylist creates a new private playlist.
 // Returns the playlist ID or error.
 func (tk *Toolkit) NewPlaylist(title string) (string, error) {
 	pl, err := tk.service.PlaylistInsert(title)
@@ -152,51 +124,35 @@ func (tk *Toolkit) DeletePlaylist(playlistId string) error {
 	return tk.service.PlaylistDelete(playlistId)
 }
 
-// AddVideoToPlaylist adds a video to a playlist.
-func (tk *Toolkit) AddVideoToPlaylist(playlistId, videoId string) (string, error) {
-	pli, err := tk.service.PlaylistItemsInsert(playlistId, videoId)
-	if err != nil {
-		return "", err
-	}
-	return pli.Id, nil
-}
-
-func (tk *Toolkit) CSVBulkAddVideoToPlaylist(playlistId string, input io.Reader, output io.Writer) error {
+// AddVideoToPlaylist adds videos to a playlist.
+// Flow: source and sink are required
+func (tk *Toolkit) AddVideoToPlaylist(playlistId string, opts ...FlowOption) error {
+	flow := options2flowconfig(opts...)
 	errors, err := multiErrorsHandler()
-	inputrecords := csv2records(errors, input)
-	videoIds := recordColumnFilter(inputrecords, 0)
-	plitems := tk.videoIds2playlist(errors, playlistId, videoIds)
-	// sink to output
-	for i := range plitems {
-		fmt.Fprintln(output, i.Id)
-	}
+	videoIds := flow.stringSource(errors)
+	plitems := tk.videos2playlist(errors, playlistId, videoIds)
+	items := playlistItem2item(plitems)
+	flow.itemSink(errors, items)
 	close(errors)
 	return <-err
 }
 
-// CSVLastUploads reads from input a list of channels ID and prints to output a csv
-// with the latest channel's video uploads since the time argument sorted by the published date (oldest first).
-func (tk *Toolkit) CSVLastUploads(input io.Reader, output io.Writer, since time.Time) error {
+// CSVLastUploads gets the latest channels' video uploads since the time argument.
+// Videos are sorted by the published date (oldest first).
+// Flow: source and sink are required
+func (tk *Toolkit) LastUploads(since time.Time, opts ...FlowOption) error {
+	flow := options2flowconfig(opts...)
 	errors, err := multiErrorsHandler()
 
 	filter := sinceDatePlaylistItems(since)
 
-	// read csv
-	inputrecords := csv2records(errors, input)
-	// first column contains the channel id
-	channelIds := recordColumnFilter(inputrecords, 0)
-
+	channelIds := flow.stringSource(errors)
 	// fetch all video uploads using three parallel go routines
-	playlistItems := tk.channelIds2VideoUploads(errors, channelIds, filter, 3)
-
-	// sorts items
+	playlistItems := tk.channels2channelvideouploads(errors, channelIds, filter, 3)
 	sorted := sortPlaylistItemByPublishedAt(playlistItems)
 
-	// convert items to records
-	outputrecords := uploadsPlaylistItem2record(sorted)
-
-	// write csv
-	sinkrecords2csv(errors, outputrecords, output)
+	items := playlistItem2item(sorted)
+	flow.itemSink(errors, items)
 
 	close(errors)
 	return <-err

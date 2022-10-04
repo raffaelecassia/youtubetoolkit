@@ -69,6 +69,13 @@ func Root(tk *youtubetoolkit.Toolkit) *cobra.Command {
 	cmd.PersistentFlags().StringVarP(&tokenFile, "token", "t", "goauth.token", "login token filename")
 	cmd.PersistentFlags().BoolVarP(&debug, "debug-http", "d", false, "logs to stdout each http request/response")
 
+	cmd.PersistentFlags().Bool("csv", true, "CSV output")
+	cmd.PersistentFlags().Bool("table", false, "Table output")
+	cmd.PersistentFlags().Bool("jsonl", false, "JSON Lines output")
+	cmd.PersistentFlags().StringSlice("fields", []string{}, "Fields for CSV/Table output (fields separated by commas). See each command for the fields list.")
+
+	cmd.MarkFlagsMutuallyExclusive("csv", "table", "jsonl")
+
 	return cmd
 }
 
@@ -107,4 +114,24 @@ func checkStdinInput() bool {
 	}
 	// checks if data is being piped to stdin
 	return (stat.Mode() & os.ModeCharDevice) == 0
+}
+
+var (
+	DEFAULT_FIELDS_SUBSCRIPTIONS    = &[]string{"ChannelId", "ChannelTitle", "ChannelUrl", "ChannelThumbUrl"}
+	DEFAULT_FIELDS_UPLOADS_PLAYLIST = &[]string{"VideoId", "VideoTitle", "PublishedAt", "ChannelId", "ChannelTitle"}
+	DEFAULT_FIELDS_PLAYLISTS        = &[]string{"PlaylistId", "PlaylistTitle", "VideoCount"}
+	DEFAULT_FIELDS_PLAYLIST         = &[]string{"VideoId", "VideoTitle", "VideoUrl", "ChannelId", "ChannelTitle", "ChannelUrl"}
+)
+
+func outputFromFlags(c *cobra.Command, defaultfields *[]string) youtubetoolkit.FlowOption {
+	fields, err := c.Flags().GetStringSlice("fields")
+	if err != nil || len(fields) == 0 {
+		fields = *defaultfields
+	}
+	if val, err := c.Flags().GetBool("table"); val && err == nil {
+		return youtubetoolkit.TableSink(os.Stdout, &fields)
+	} else if val, err := c.Flags().GetBool("jsonl"); val && err == nil {
+		return youtubetoolkit.JSONLinesSink(os.Stdout)
+	}
+	return youtubetoolkit.CSVSink(os.Stdout, &fields)
 }

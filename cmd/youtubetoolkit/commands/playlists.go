@@ -2,7 +2,6 @@ package commands
 
 import (
 	"fmt"
-	"io"
 	"os"
 
 	"github.com/raffaelecassia/youtubetoolkit"
@@ -14,10 +13,10 @@ func Playlists(parent *cobra.Command, tk *youtubetoolkit.Toolkit) *cobra.Command
 		Use:   "playlists",
 		Short: "Manage user playlists",
 		Long: `Returns all user playlists.
-Data printed to stdout is a CSV with columns "id, title, videoCount".`,
+Available fields for CSV/Table output: PlaylistId, PlaylistTitle, VideoCount.`,
 		Args: cobra.NoArgs,
-		Run: func(_ *cobra.Command, _ []string) {
-			err := tk.CSVPlaylists(os.Stdout)
+		Run: func(c *cobra.Command, _ []string) {
+			err := tk.Playlists(outputFromFlags(c, DEFAULT_FIELDS_PLAYLISTS))
 			if err != nil {
 				fmt.Fprintln(os.Stderr, "Error:", err)
 			}
@@ -33,10 +32,11 @@ func Playlist(parent *cobra.Command, tk *youtubetoolkit.Toolkit) *cobra.Command 
 		Use:   "playlist",
 		Short: "Manage a playlist",
 		Long: `Returns all videos of a playlist.
-Data printed to stdout is a CSV with columns "videoId, title, channelId, channelTitle".`,
+Fields for CSV/Table output: VideoId*, VideoTitle*, VideoUrl*, ChannelId*, ChannelTitle*, ChannelUrl*, PlaylistItemId.
+(* default fields when --fields is not specified)`,
 		Args: cobra.NoArgs,
 		Run: func(c *cobra.Command, _ []string) {
-			err := tk.CSVPlaylist(id, os.Stdout)
+			err := tk.Playlist(id, outputFromFlags(c, DEFAULT_FIELDS_PLAYLIST))
 			if err != nil {
 				fmt.Fprintln(os.Stderr, "Error:", err)
 			}
@@ -67,7 +67,9 @@ Prints to stdout the playlist id.`,
 			} else {
 				fmt.Fprintln(os.Stdout, id)
 				if checkStdinInput() {
-					err := tk.CSVBulkAddVideoToPlaylist(id, os.Stdin, io.Discard)
+					err := tk.AddVideoToPlaylist(id,
+						youtubetoolkit.CSVFirstFieldOnlySource(os.Stdin),
+						youtubetoolkit.NullSink())
 					if err != nil {
 						fmt.Fprintln(os.Stderr, "Error:", err)
 					}
@@ -96,30 +98,32 @@ func DelPlaylist(parent *cobra.Command, tk *youtubetoolkit.Toolkit) *cobra.Comma
 }
 
 func AddToPlaylist(parent *cobra.Command, tk *youtubetoolkit.Toolkit) *cobra.Command {
-	var printid bool
+	var print bool
 	cmd := &cobra.Command{
 		Use:   "add [video id]",
 		Short: "Adds a video to a playlist",
 		Long: `Adds a video to a playlist.
 To add multiple videos, send to stdin a list of video ids (or a CSV with ids in the first column).
-The flag --id is mandatory.`,
+The flag --id is mandatory.
+If --print-data flag is used, the default fields from the playlist command will apply.`,
 		Args: cobra.MaximumNArgs(1),
 		Run: func(c *cobra.Command, args []string) {
-			plid := c.Flag("id").Value.String()
+			var output youtubetoolkit.FlowOption
+			if print {
+				output = outputFromFlags(c, DEFAULT_FIELDS_PLAYLIST)
+			} else {
+				output = youtubetoolkit.NullSink()
+			}
+
+			playlistId := c.Flag("id").Value.String()
 			if len(args) == 1 {
-				id, err := tk.AddVideoToPlaylist(plid, args[0])
+				err := tk.AddVideoToPlaylist(playlistId, youtubetoolkit.SingleStringSource(args[0]), output)
 				if err != nil {
 					fmt.Fprintln(os.Stderr, "Error:", err)
-				} else if printid {
-					fmt.Fprintln(os.Stdout, id)
 				}
 			} else {
 				if checkStdinInput() {
-					out := io.Discard
-					if printid {
-						out = os.Stdout
-					}
-					err := tk.CSVBulkAddVideoToPlaylist(plid, os.Stdin, out)
+					err := tk.AddVideoToPlaylist(playlistId, youtubetoolkit.CSVFirstFieldOnlySource(os.Stdin), output)
 					if err != nil {
 						fmt.Fprintln(os.Stderr, "Error:", err)
 					}
@@ -134,7 +138,7 @@ The flag --id is mandatory.`,
 
 		},
 	}
-	cmd.Flags().BoolVarP(&printid, "print-id", "i", false, "print to stdout the playlist item id of the added video(s)")
+	cmd.Flags().BoolVarP(&print, "print-data", "p", false, "print to stdout the playlist/video infos of the added video(s)")
 	parent.AddCommand(cmd)
 	return cmd
 }
